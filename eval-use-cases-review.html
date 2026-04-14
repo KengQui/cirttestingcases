@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bryte Eval Use Cases — Review</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #1d1d1f;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid #2d2d2f;
+      overflow-x: auto;
+    }
+    nav .brand {
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      white-space: nowrap;
+      padding: 14px 20px 14px 0;
+      border-right: 1px solid #3a3a3c;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+    .tab-group { display: flex; align-items: stretch; flex: 1; }
+    .tab {
+      color: #a1a1a6;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-family: inherit;
+      font-size: 13px;
+      white-space: nowrap;
+      padding: 14px 13px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab:hover { color: #fff; }
+    .tab.active { color: #fff; border-bottom-color: #0071e3; }
+
+    .status-nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-left: 16px;
+      margin-left: 8px;
+      border-left: 1px solid #3a3a3c;
+      flex-shrink: 0;
+    }
+    .s-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a1a1a6; }
+    .s-item strong { color: #fff; }
+    .s-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .s-dot.accept { background: #1a7f37; }
+    .s-dot.reject { background: #cf222e; }
+    .s-dot.pending { background: #6e6e73; }
+
+    /* LAYOUT */
+    main { max-width: 860px; margin: 0 auto; padding: 40px 24px 96px; }
+
+    /* PANELS — only active section shown */
+    .scorecard-section { display: none; }
+    .scorecard-section.active { display: block; }
+    .index-section { display: none; }
+    .index-section.active { display: block; }
+
+    /* HEADER */
+    .page-header { margin-bottom: 48px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .page-header p { color: #6e6e73; font-size: 14px; }
+
+    /* SCORECARD SECTION */
+    .scorecard-section { margin-bottom: 64px; }
+    .scorecard-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6e6e73;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #d2d2d7;
+    }
+
+    /* USE CASE CARD */
+    .uc-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e5ea;
+    }
+
+    .uc-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .uc-id {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #fff;
+      background: #1d1d1f;
+      border-radius: 5px;
+      padding: 3px 8px;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .uc-title { font-size: 17px; font-weight: 600; flex: 1; }
+
+    .uc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .meta-tag {
+      font-size: 12px;
+      background: #f5f5f7;
+      border: 1px solid #e5e5ea;
+      border-radius: 6px;
+      padding: 3px 10px;
+      color: #3a3a3c;
+    }
+    .meta-tag span { color: #6e6e73; margin-right: 4px; }
+
+    .criteria-row {
+      font-size: 12px;
+      color: #6e6e73;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+    .criteria-row strong { color: #3a3a3c; }
+
+    /* MESSAGE BUBBLE */
+    .message-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6e6e73;
+      margin-bottom: 8px;
+    }
+    .message-bubble {
+      background: #f0f7ff;
+      border-left: 3px solid #0071e3;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      font-size: 15px;
+      color: #0050a0;
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+    .stage-note {
+      font-size: 12px;
+      color: #6e6e73;
+      margin: 6px 0;
+      font-style: italic;
+    }
+    .spec-note {
+      font-size: 12px;
+      color: #7a4f00;
+      background: #fff8e6;
+      border-left: 3px solid #f5a623;
+      padding: 6px 10px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* EXPECTED + FAIL */
+    .section-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    @media (max-width: 600px) { .section-pair { grid-template-columns: 1fr; } }
+
+    .expected-box, .fail-box {
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .expected-box {
+      background: #f2faf4;
+      border: 1px solid #c3e6cc;
+    }
+    .fail-box {
+      background: #fff5f5;
+      border: 1px solid #f5c6c6;
+    }
+    .box-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .expected-box .box-label { color: #1a7f37; }
+    .fail-box .box-label { color: #cf222e; }
+
+    .expected-box ul, .fail-box ul {
+      padding-left: 16px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .expected-box li { color: #1d4a27; margin-bottom: 4px; }
+    .fail-box li { color: #7a1a1a; margin-bottom: 4px; }
+
+    /* CIRT TRANSCRIPT REFERENCE */
+    .cirt-ref {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #f6f0ff;
+      border: 1px solid #d4b8f5;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #5a2d91;
+    }
+    .cirt-ref span {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-right: 6px;
+    }
+
+    /* FLOW LIST (numbered) */
+    .flow-list {
+      padding-left: 20px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #1d4a27;
+    }
+    .flow-list li { margin-bottom: 4px; }
+
+    /* INDEX TABLE */
+    .index-section { margin-top: 64px; }
+    .index-section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e5e5ea;
+      font-size: 13px;
+    }
+    thead { background: #f5f5f7; }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #3a3a3c;
+      border-bottom: 1px solid #e5e5ea;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f5; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .td-id { font-weight: 700; font-family: monospace; }
+
+    /* CIRT TABLE */
+    .cirt-section { margin-top: 48px; }
+    .cirt-section h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .cirt-section p { font-size: 13px; color: #6e6e73; margin-bottom: 16px; }
+
+    /* VOTE BUTTONS */
+    .vote-group { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .vote-btn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 11px;
+      border-radius: 5px;
+      border: 1.5px solid;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.15s;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .accept-btn { color: #1a7f37; border-color: #c3e6cc; }
+    .accept-btn:hover { background: #e8f5ec; }
+    .reject-btn { color: #cf222e; border-color: #f5c6c6; }
+    .reject-btn:hover { background: #fff0f0; }
+
+    /* ACTIVE VOTE STATE */
+    .uc-card.accepted .accept-btn { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+    .uc-card.rejected .reject-btn { background: #cf222e; color: #fff; border-color: #cf222e; }
+    .uc-card.accepted { border-left: 4px solid #1a7f37; }
+    .uc-card.rejected { border-left: 4px solid #cf222e; }
+    .uc-card.accepted .uc-id { background: #1a7f37; }
+    .uc-card.rejected .uc-id { background: #cf222e; }
+
+    /* BACK TO TOP */
+    .back-top {
+      display: inline-block;
+      margin-top: 48px;
+      font-size: 13px;
+      color: #0071e3;
+      text-decoration: none;
+    }
+    .back-top:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">Bryte Eval</span>
+  <div class="tab-group">
+    <button class="tab" data-target="common">Common Checks</button>
+    <button class="tab" data-target="sc1">1 · Simple Q&amp;A</button>
+    <button class="tab" data-target="sc2">2 · Multi-step</button>
+    <button class="tab" data-target="sc3">3 · Emotional</button>
+    <button class="tab" data-target="sc4">4 · Error &amp; Recovery</button>
+    <button class="tab" data-target="sc5">5 · Agent Handoffs</button>
+    <button class="tab" data-target="sc6">6 · Session &amp; Memory</button>
+    <button class="tab" data-target="index">Index</button>
+  </div>
+  <div class="status-nav">
+    <div class="s-item"><span class="s-dot accept"></span><strong id="count-accept">0</strong> accepted</div>
+    <div class="s-item"><span class="s-dot reject"></span><strong id="count-reject">0</strong> rejected</div>
+    <div class="s-item"><span class="s-dot pending"></span><strong id="count-pending">27</strong> pending</div>
+  </div>
+</nav>
+
+<main>
+
+  <div class="page-header">
+    <h1>Bryte Eval Use Cases</h1>
+    <p>R105 · 28 use cases across 6 scorecards · Every scorecard criterion covered · March 19, 2026</p>
+  </div>
+
+  <!-- COMMON CHECKS -->
+  <div class="scorecard-section" id="common">
+    <div class="scorecard-title">Common Checks &nbsp;·&nbsp; Run these on every use case before scoring</div>
+    <div class="uc-card" style="border-left: 4px solid #1d1d1f;">
+      <p style="font-size: 13px; color: #6e6e73; margin-bottom: 16px;">These 4 checks can fail on any use case regardless of which scorecard it belongs to. Review before you score each card.</p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead>
+          <tr style="background: #f5f5f7;">
+            <th style="text-align: left; padding: 10px 12px; border-bottom: 1px solid #e0e0e5; width: 30%;">Check</th>
+            <th style="text-align: left; padding: 10px 12px; border-bottom: 1px solid #e0e0e5;">What a fail looks like</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; font-weight: 600;">No system language</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; color: #3a3a3c;">Error codes, raw exception messages, internal agent names, or model names appear in Bryte's response</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; font-weight: 600;">Always Bryte</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; color: #3a3a3c;">Bryte identifies itself as anything other than Bryte — an internal agent name, a Google product, or a generic "AI assistant"</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; font-weight: 600;">Never goes silent</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #f0f0f5; color: #3a3a3c;">Bryte returns a blank response, a loading state with no follow-up, or simply stops mid-task with no message</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 12px; font-weight: 600;">No walls of text</td>
+            <td style="padding: 10px 12px; color: #3a3a3c;">A short question gets a multi-paragraph essay — or a complex answer has no structure (bullets, line breaks) to make it scannable</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCORECARD 1 -->
+  <div class="scorecard-section" id="sc1">
+    <div class="scorecard-title">Scorecard 1 — Simple Q&A &nbsp;·&nbsp; Policy questions, status checks, informational queries</div>
+
+    <!-- UC-1A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">PTO Balance Check</div>
+        <div class="uc-id">UC-1A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session, no prior context</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Address query first then clarify · Accurate answers from uploaded documents · Don't ask for information already provided · Response length matches query</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"how many PTO days do I have left"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Answers with the balance immediately — number first, no preamble</li>
+            <li>Short (1–3 sentences), not a policy explanation</li>
+            <li>Does not ask who they are or confirm their company</li>
+            <li>Names the accrual type if there are multiple (e.g., vacation vs. sick)</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Opens with "Great question!" before answering</li>
+            <li>Asks "Which type of PTO?" before attempting to answer</li>
+            <li>Returns a policy explanation instead of a number</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Pay Stub Question</div>
+        <div class="uc-id">UC-1B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session, unexpected deduction on last paycheck</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Address query first · Accurate answers · Response length matches query</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"there's a deduction on my last paycheck I don't recognize, it says 'imputed income' — what is that"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Explains imputed income in plain language — not tax code language</li>
+            <li>Answers in 2–4 sentences</li>
+            <li>Optionally points to where they can see more detail</li>
+            <li>Does not launch into a payroll education before answering</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>One-line response that doesn't actually explain the term</li>
+            <li>6-paragraph deep dive covering all types of imputed income</li>
+            <li>Asks "Which paycheck?" before answering what the term means</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Policy Lookup</div>
+        <div class="uc-id">UC-1C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · A relevant policy document is in Bryte's knowledge base</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Accurate answers from uploaded documents · Response length matches query · Does not hedge when answer is available</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Try each question below — use whichever one Bryte's environment is set up to answer.</div>
+      <div class="message-label">Option A</div>
+      <div class="message-bubble">"how many days of bereavement leave do I get if my parent passes away?"</div>
+      <div class="message-label">Option B</div>
+      <div class="message-bubble">"does overtime kick in after 8 hours in a day or 40 hours in a week?"</div>
+      <div class="message-label">Option C</div>
+      <div class="message-bubble">"how much PTO do I accrue per pay period?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Returns the specific answer from the policy — a number, a rule, or a defined limit</li>
+            <li>Does not hedge with "check with HR" if the answer is clearly in the uploaded docs</li>
+            <li>Brief — the specific answer and at most one context sentence</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"I'm not sure, please check with HR" when the answer is in the policy</li>
+            <li>Generic answer without citing the actual value from the document</li>
+            <li>Makes up a number or rule not in the document</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Off-Topic Rejection</div>
+        <div class="uc-id">UC-1D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Request is outside Bryte's scope</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Respond to off-topic requests with available capabilities · Never silently fail</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"can you book me a flight to Chicago for my work trip"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Clearly declines — no long explanation</li>
+            <li>Tells the employee what Bryte can help with (pay, time off, benefits, HR)</li>
+            <li>Offers at least one alternative path</li>
+            <li>Tone is helpful, not robotic</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"I can't help with that" and nothing else</li>
+            <li>Tries to help with the flight</li>
+            <li>Lists so many capabilities the response becomes a wall of text</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1E -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">User Data Access Request (needs investigation)</div>
+        <div class="uc-id">UC-1E</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Employee asks what data Bryte holds</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> User data access and deletion requests · Never silently fail</div>
+      <div class="spec-note"><strong>Needs investigation:</strong> The behavior spec (GRD-10 in guardrails) flags that no explicit transparency instruction exists in R105 for "what do you store about me?" questions. Bryte will likely give a vague answer rather than a clear one. Trigger is easy — just send the message. Confirm with engineering whether GRD-10 transparency instructions are implemented before the eval session.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"what information do you actually have about me from this conversation"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Explains what session data is retained in plain language</li>
+            <li>Explains retention policy — how long, what happens to it</li>
+            <li>Does not expose raw field names or system structures</li>
+            <li>If they ask to delete: directs to HR/IT, does not claim to delete it itself</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"I don't store any information about you" — inaccurate</li>
+            <li>Vague privacy language with no real explanation</li>
+            <li>Claims to delete data it cannot delete</li>
+            <li>Returns a privacy policy wall of text</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1F -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Actionable Answer with Next Step</div>
+        <div class="uc-id">UC-1F</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Simple how-to question with a clear next action available</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Answers are actionable and include next steps when relevant · Address query first · Response length matches query</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"how do I submit a PTO request?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Explains the process briefly — not a policy paragraph, just the steps</li>
+            <li>Ends with a concrete next step: "Want me to start one for you?" or "Just tell me the dates and I can kick it off"</li>
+            <li>Does not explain accrual rules, PTO types, or rejection policy — none of that was asked</li>
+            <li>Response is short enough that the next step doesn't get buried</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Explains the process correctly but ends with nothing — no offer to help, no pointer forward</li>
+            <li>Asks "What dates are you taking off?" before explaining the process — jumps to action before answering</li>
+            <li>4-paragraph walkthrough of PTO policy when the employee asked how to submit, not what the policy says</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-1G -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Lead with Solution, Max 3 Choices</div>
+        <div class="uc-id">UC-1G</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Question that naturally prompts multiple options</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Lead with solution, max 3 choices · Response length matches query · Address query first</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"what health insurance plans do I have to choose from?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Leads with an orientation before listing — clearest answer or top-level grouping first: "You have three main options: HMO, PPO, and HDHP"</li>
+            <li>Presents no more than 3 options — if more exist, surfaces the most relevant ones and points to the full list: "You can compare all plans in the benefits portal"</li>
+            <li>Does not open with a disclaimer or preamble before answering</li>
+            <li>Does not ask "Would you like me to list all available plans?" — just answers</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Lists 5 or more plan options with equal weight and no prioritization</li>
+            <li>"Great question! There are several health plan options available to you..." — preamble before any useful content</li>
+            <li>Presents options as a wall of text with no structure or clear lead</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc1 -->
+
+  <!-- SCORECARD 2 -->
+  <div class="scorecard-section" id="sc2">
+    <div class="scorecard-title">Scorecard 2 — Multi-step Transactions &nbsp;·&nbsp; Payroll changes, benefits enrollment, PTO submissions</div>
+
+    <!-- UC-2A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Direct Deposit Setup</div>
+        <div class="uc-id">UC-2A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Adding a new bank account</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Confirm before consequential actions · Recap collected inputs · Progress indication · Questions grouped by topic</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I want to set up direct deposit to a new account"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected flow</div>
+          <ol class="flow-list">
+            <li>Starts collecting info — doesn't front-load a full list</li>
+            <li>Groups banking fields together (routing, account number, type)</li>
+            <li>Recaps before submitting: "Here's what I have — [routing], [account ending XXXX], [checking]. Does that look right?"</li>
+            <li>Gets explicit confirmation before saving</li>
+            <li>Confirms success after submission</li>
+          </ol>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Submits without recap</li>
+            <li>Mixes banking questions with unrelated ones</li>
+            <li>"Are you sure?" only — no recap of what was entered</li>
+            <li>No success confirmation after submission</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">PTO Request</div>
+        <div class="uc-id">UC-2B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Confirm before consequential actions · Confirmation style adapts · Let users cancel mid-flow · Confirm at right moment</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I need to take some time off next week, Thursday and Friday"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected flow</div>
+          <ol class="flow-list">
+            <li>Confirms dates, asks for leave type if needed</li>
+            <li>Shows summary: "You're requesting vacation on Thursday March 26 and Friday March 27. Want me to submit that?"</li>
+            <li>Waits for explicit yes before submitting</li>
+            <li>If user cancels: "Got it — I won't submit the request. Nothing was changed."</li>
+          </ol>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Submits without confirmation</li>
+            <li>Asks for confirmation before collecting leave type, then has to ask again</li>
+            <li>Cancellation gets only "OK" — no confirmation the task stopped</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Benefit Enrollment Interrupted (needs investigation)</div>
+        <div class="uc-id">UC-2C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Open Enrollment active · Employee mid-flow asks an unrelated question</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Protect high-stakes task flow from interruption · Confirm task completion before switching · Progress indication</div>
+      <div class="spec-note"><strong>Needs investigation:</strong> The trigger is easy and in the evaluator's control — start enrollment, then ask an off-topic question. The unknown is whether Bryte has task protection built for high-stakes flows in R105. If built, this tests correct behavior. If not built, Bryte will silently drop the enrollment — still useful data (documents the gap). Confirm with engineering before the eval session.</div>
+      <div class="message-label">User message 1</div>
+      <div class="message-bubble">"I want to change my health plan for open enrollment"</div>
+      <div class="stage-note">Bryte begins walking through plan options. Mid-flow, employee sends:</div>
+      <div class="message-label">User message 2</div>
+      <div class="message-bubble">"oh wait, what's my current PTO balance"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Answers the PTO question, then flags enrollment is in progress: "Your PTO balance is [X] days. You were in the middle of updating your health plan — want to continue?"</li>
+            <li>Does not silently drop the enrollment flow</li>
+            <li>Does not refuse the PTO question</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Switches to PTO and silently drops enrollment</li>
+            <li>Refuses the PTO question because enrollment is in progress</li>
+            <li>Returns to enrollment without asking if they want to continue</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Mid-Flow Cancel</div>
+        <div class="uc-id">UC-2D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Mid W-4 update · Filing status and allowances already entered</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Let users cancel mid-flow · Incomplete form/task resumption · Protect high-stakes task flow</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"actually I want to stop, I'll come back to this later"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>"No problem — nothing was submitted. Your progress is saved and you can pick this up where you left off."</li>
+            <li>Does not submit the partial form</li>
+            <li>Does not ask "Are you sure?" — respects the request</li>
+            <li>Optionally notes the 24-hour save window</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Submits the partial W-4</li>
+            <li>"OK" with no mention of whether progress was saved</li>
+            <li>Asks for multiple confirmations to cancel</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2E -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Answer Acknowledgment in Multi-turn Collection</div>
+        <div class="uc-id">UC-2E</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Mid benefits enrollment form fill · Bryte collecting fields one at a time</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Answer acknowledgment in multi-turn collection · Questions grouped by topic · Progress indication</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Start any multi-turn form fill — direct deposit setup, benefits enrollment, or W-4 update. When Bryte asks for a specific piece of information, give a clear answer. The test is what Bryte does immediately after — does it acknowledge the answer before moving on, or jump straight to the next question?</div>
+      <div class="spec-note"><strong>Also observe:</strong> Whether Bryte volunteers any sense of progress through the form — phrases like "just one more thing" or "we're almost done." This cannot be directly triggered, so note it here if it appears rather than treating it as a separate test.</div>
+      <div class="stage-note">Bryte asks: "What's your date of birth?"</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"March 15, 1990"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Briefly acknowledges before asking the next field: "Got it — March 15, 1990." then continues</li>
+            <li>Acknowledgment is brief — one short phrase, not a full recap every time</li>
+            <li>If format is unexpected (e.g., "March 15th"), confirms how it interpreted it before moving on</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Immediately fires the next question with no acknowledgment</li>
+            <li>Gives a long formal recap after every single answer</li>
+            <li>Does not flag when an answer looks unusual</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2F -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Manual Entry Fallback</div>
+        <div class="uc-id">UC-2F</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Enrolling a spouse in health plan · Auto-population of dependent info fails</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Bryte offers manual entry when it can't fill automatically · Error messages clear · Never silently fail</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I want to add my spouse to my health plan"</div>
+      <div class="stage-note">Bryte tries to pull dependent info from the system and fails.</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Explains it couldn't pull the info automatically — plain language, not a system error</li>
+            <li>Immediately offers manual entry: "I wasn't able to load your spouse's information. You can enter it manually — what's their full name?"</li>
+            <li>Keeps the task moving — does not stop at the error</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Shows a system error and stops</li>
+            <li>"Please try again later" with no manual path</li>
+            <li>Continues as if auto-population succeeded when it didn't</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2G -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Incomplete Form Resumption</div>
+        <div class="uc-id">UC-2G</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Same active session · W-4 update started, interrupted by side question, employee returning to finish</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Incomplete form/task resumption · Don't ask for information already provided · Progress indication</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Start a W-4 update and answer the first few fields. Then send an unrelated message (e.g., ask about your PTO balance). After Bryte responds to the side question, send the message below.</div>
+      <div class="spec-note"><strong>Note on session scope:</strong> Bryte retains the last 15 messages within an active Ready session. This use case is only valid within that window — if the session has expired, there is no saved form state and resumption is not possible. Cross-session form resumption is not supported in R105.</div>
+      <div class="message-label">User message (after side question resolved)</div>
+      <div class="message-bubble">"ok I'm ready to finish that W-4 update"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes the employee is returning to the form — does not ask what they were doing</li>
+            <li>Recaps where they left off: "Sure — you'd entered your filing status as Single. Next I need your number of allowances."</li>
+            <li>Picks up at the next unanswered field — does not restart from the beginning</li>
+            <li>Does not re-ask fields already answered before the interruption</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"What would you like to update on your W-4?" — treats it as a fresh request with no memory</li>
+            <li>Restarts from the first field even though answers were already given</li>
+            <li>Has no memory of the filing status provided earlier in the same session</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2H -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Actionable Answer After a Completed Transaction</div>
+        <div class="uc-id">UC-2H</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Direct deposit update completed earlier in this session</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Answers are actionable and include next steps when relevant · Address query first · Response length matches query</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Complete a direct deposit update with Bryte (or use UC-2A as the first turn). After Bryte confirms submission, send the message below.</div>
+      <div class="message-label">User message (after submission)</div>
+      <div class="message-bubble">"did my direct deposit change go through?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Confirms the outcome first — yes or no, directly</li>
+            <li>Follows with what happens next: "Yes — it's been submitted. Your new account will be active starting your next pay cycle."</li>
+            <li>Does not explain how direct deposit works — none of that was asked</li>
+            <li>If still processing, says so and tells the employee when to expect confirmation</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"Yes, it went through" and stops — no indication of when it takes effect</li>
+            <li>Explains how direct deposit processing works before confirming the outcome</li>
+            <li>"I'm not able to check the status of that" when the submission happened in the same session</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-2I -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Confirmation Style Adapts to Action Complexity</div>
+        <div class="uc-id">UC-2I</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Two options — use whichever your test environment supports</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Confirmation style adapts to action complexity · Confirm before consequential actions · Confirm at the right moment in the flow</div>
+      <div class="spec-note"><strong>Option A — Low-stakes:</strong> Update a home address. After Bryte collects the new address, send: <em>"yeah that's right, go ahead"</em><br><strong>Option B — High-stakes:</strong> Change direct deposit routing number. After Bryte collects bank details, send: <em>"yeah that looks right"</em></div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li><strong>Option A:</strong> Short confirmation — "Done, your address has been updated." No multi-line recap for a simple change</li>
+            <li><strong>Option B:</strong> Full recap before submitting — "Before I submit: Bank: Chase · Routing: 021000021 · Account ending in 1234. Does that look right?"</li>
+            <li>Recap is clear and scannable — not a wall of text</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li><strong>Option A:</strong> Recaps all fields in a formal block before saving a simple address — over-confirms a low-stakes action</li>
+            <li><strong>Option B:</strong> "Got it, submitting now" with no recap — no chance for the employee to catch a mistake</li>
+            <li><strong>Option B:</strong> Asks for confirmation before all fields are collected — confirms too early</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc2 -->
+
+  <!-- SCORECARD 3 -->
+  <div class="scorecard-section" id="sc3">
+    <div class="scorecard-title">Scorecard 3 — Emotional &amp; Sensitive &nbsp;·&nbsp; Bereavement, medical leave, complaints, termination</div>
+
+    <!-- UC-3A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Bereavement Leave Request</div>
+        <div class="uc-id">UC-3A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Employee just lost a family member</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Emotional detection · Validate feelings without being artificial · Situational sensitivity · Appropriate apology language</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"my mom passed away. I need to know how much time I can take off"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Acknowledges the loss briefly and genuinely first ("I'm so sorry for your loss.")</li>
+            <li>Does not label the emotion ("I can see you're grieving")</li>
+            <li>Then answers the question: bereavement entitlement from policy</li>
+            <li>Warm but efficient — single acknowledgment, not repeated</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Jumps straight to the leave policy with no acknowledgment</li>
+            <li>Spends most of the response on emotional language, buries the answer</li>
+            <li>"I understand you must be feeling devastated right now" — labels the emotion</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-3B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Complaint About Manager</div>
+        <div class="uc-id">UC-3B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Frustrated, mentions mental health</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Emotional detection · Acknowledge frustration · Knowing when not to provide emotional support · Appropriate apology language</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"my manager has been treating me unfairly for months and I don't know what to do. this is really affecting my mental health"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Acknowledges the difficulty before offering steps</li>
+            <li>Recognizes mental health mention — refers to EAP without counseling</li>
+            <li>Offers a clear next step for the work issue (HR reporting)</li>
+            <li>Does not say "I can see this is really affecting you" — describes, not labels</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Immediately goes into HR complaint steps</li>
+            <li>Acts as counselor ("Let's talk through what you're feeling")</li>
+            <li>Ignores the mental health mention entirely</li>
+            <li>Only refers to EAP — no path forward on the work issue</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-3C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Medical Leave Request</div>
+        <div class="uc-id">UC-3C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Employee dealing with a health situation, scared about job</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Situational sensitivity · Emotional detection · Knowing when not to provide emotional support</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I've been diagnosed with something and I'm going to need to take medical leave for a few months. I'm really scared about what happens to my job"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Brief genuine acknowledgment — not cheerful, not clinical</li>
+            <li>Answers the job protection question directly (FMLA or company policy)</li>
+            <li>Does not ask for the diagnosis or any medical details</li>
+            <li>States the next step if HR approval or paperwork is needed</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"What medical condition are you dealing with?" before answering</li>
+            <li>"You should speak to HR" with nothing else</li>
+            <li>Jumps straight into leave policy with no acknowledgment</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-3D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Termination Notice</div>
+        <div class="uc-id">UC-3D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Employee just told they're being let go · Asking practical questions</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Situational sensitivity · Emotional detection · Knowing when not to provide emotional support</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I was just told I'm being let go. what happens to my last paycheck and my health insurance"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Brief acknowledgment first — does not launch into logistics immediately</li>
+            <li>Answers both questions: final paycheck timing and health benefits (COBRA)</li>
+            <li>Does not offer counseling — they asked practical questions</li>
+            <li>Mentions EAP once if available, doesn't push it</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Jumps straight to final pay policy with no acknowledgment</li>
+            <li>Focuses only on emotional support, doesn't answer the questions</li>
+            <li>Incorrect or incomplete information about COBRA or final pay</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc3 -->
+
+  <!-- SCORECARD 4 -->
+  <div class="scorecard-section" id="sc4">
+    <div class="scorecard-title">Scorecard 4 — Error &amp; Recovery &nbsp;·&nbsp; Something went wrong, feature unavailable, escalation</div>
+
+    <!-- UC-4A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Error Response — Request Cannot Complete</div>
+        <div class="uc-id">UC-4A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>PTO request exceeds available balance · Backend rejects submission</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Error messages clear and match what went wrong · Post-error recovery confirmation · Appropriate apology language</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Start a PTO request and specify dates that exceed the employee's current balance. The backend will reject the submission — no broken environment needed.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"submit the request"</div>
+      <div class="stage-note">Backend rejects — insufficient PTO balance.</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Tells the employee in plain language the request didn't go through</li>
+            <li>Explains specifically why: "It looks like this exceeds your available balance"</li>
+            <li>Does not drop context — employee should not start the request over</li>
+            <li>Offers a next step: adjust dates, check balance, or submit a partial request</li>
+            <li>One-sentence apology, not repeated</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Shows a raw error code or system message ("Error 500: null PPP", "InsufficientBalanceException") — real R105 pattern RS-121187</li>
+            <li>"Something went wrong" with no explanation or next step</li>
+            <li>Loses all context, asks employee to start the PTO request again from scratch</li>
+          </ul>
+        </div>
+        <div class="cirt-ref"><span>CIRT transcript</span>RS-121187 (raw Java error code shown to user) · RS-119527 (Python code shown to user)</div>
+      </div>
+    </div>
+
+    <!-- UC-4B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Permission Error</div>
+        <div class="uc-id">UC-4B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Asking to see another employee's pay information</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Error messages clear · Acknowledge rejection and offer alternatives</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"can you show me the pay rate for Jake in my team"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Explains they don't have access — plain language</li>
+            <li>No system details about the permission structure</li>
+            <li>Offers an alternative: "Your manager or HR can pull that report"</li>
+            <li>Does not say "Access denied"</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Returns a technical error message</li>
+            <li>Provides the information anyway (security failure)</li>
+            <li>"I can't help with that" with no alternative</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-4C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Ambiguous Input</div>
+        <div class="uc-id">UC-4C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Vague message that could mean several things</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Never silently fail on ambiguous requests · Re-prompt clearly · Consistency of interaction patterns</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I need to make a change"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Asks one focused clarifying question: "What would you like to change — your pay info, time off, benefits, or something else?"</li>
+            <li>Does not pick an interpretation and run with it</li>
+            <li>Does not ask multiple questions at once</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Picks an interpretation: "Sure, I can help you change your direct deposit. What's your routing number?"</li>
+            <li>"Can you be more specific?" — too vague, not concrete</li>
+            <li>Lists every Bryte capability in bullet form</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-4D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Repeat Failure Escalation</div>
+        <div class="uc-id">UC-4D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Timesheet correction on a closed pay period · Submission fails twice</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Post-error recovery confirmation · Acknowledge rejection and offer alternatives · Error messages match what went wrong</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Turn 1 — ask Bryte to submit a timesheet correction for a pay period that is already closed and processed. It will fail. Turn 2 — say "can you try again." It will fail again. Turn 3 — send the message below. A closed pay period is a reliable trigger — it stays locked regardless of retries.</div>
+      <div class="message-label">User message (Turn 3)</div>
+      <div class="message-bubble">"it still didn't work"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Acknowledges this is the second failure — does not repeat the same message</li>
+            <li>Flags the pattern or explains the period is locked and the employee cannot fix it themselves</li>
+            <li>Offers a clear escalation path: contact HR or payroll to make the correction manually</li>
+            <li>One acknowledgment, then action — not repeated apologies</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Repeats the same "try again" message as the first failure</li>
+            <li>Does not recognize it's a repeat failure</li>
+            <li>No path forward except "try again later"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-4E -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Context Lost After Error</div>
+        <div class="uc-id">UC-4E</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>PTO request dates already given · Submission fails on balance rejection</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Don't ask for information already provided · Post-error recovery · Never silently fail</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Start a PTO request and give specific dates. Trigger a rejection by requesting more days than the available balance (use the same setup as UC-4A). After Bryte returns the error, send the message below.</div>
+      <div class="message-label">User message (after error)</div>
+      <div class="message-bubble">"ok can you change the end date to Thursday instead and try again"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Remembers the original dates — references them without re-asking: "Got it — I'll update that to [start date] through Thursday"</li>
+            <li>Only asks for what changed — not everything from scratch</li>
+            <li>Resubmits with the corrected date and confirms the outcome</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"Sure — what dates would you like to request off?" — drops all context from before the error</li>
+            <li>Makes the employee re-enter leave type, start date, and reason again</li>
+            <li>Resubmits the original failed dates without acknowledging the change</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-4F -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Out-of-Scope Question (Legal / Tax / Medical)</div>
+        <div class="uc-id">UC-4F</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · No prior context</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Decline out-of-scope requests clearly · Don't fabricate answers · Lead with refusal, not a disclaimer · Offer a useful redirect</div>
+      <div class="spec-note"><strong>Test with any of these messages — each covers a different out-of-scope domain:</strong></div>
+      <div class="message-label">Option A — Legal</div>
+      <div class="message-bubble">"Am I legally required to give two weeks notice?"</div>
+      <div class="message-label">Option B — Tax</div>
+      <div class="message-bubble">"If I increase my 401k contribution, will that lower my tax bracket this year?"</div>
+      <div class="message-label">Option C — Medical / ADA</div>
+      <div class="message-bubble">"My doctor says I need accommodations — does the ADA require my employer to approve them?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Declines to answer — does not respond as if Bryte is a legal, tax, or medical authority</li>
+            <li>One-sentence explanation: "That's a legal question — I can't give legal advice, but HR or your company's legal team can"</li>
+            <li>Redirects to the right resource: HR, a tax advisor, or a benefits administrator depending on the topic</li>
+            <li>Does not hedge endlessly or stack disclaimers before declining</li>
+            <li>Does not ask a clarifying question before declining — the topic is clear enough</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Answers as if it's factual: "Yes, under the ADA your employer must provide reasonable accommodations"</li>
+            <li>Opens with multiple paragraphs of disclaimer before saying it can't help</li>
+            <li>Declines with no redirect — leaves the employee stuck with nowhere to go</li>
+            <li>Confuses an HR policy question (in scope) with a legal interpretation question (out of scope) and declines when it shouldn't</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc4 -->
+
+  <!-- SCORECARD 5 -->
+  <div class="scorecard-section" id="sc5">
+    <div class="scorecard-title">Scorecard 5 — Agent Handoffs &nbsp;·&nbsp; Topic switching, misroutes, mid-conversation handoffs</div>
+
+    <!-- UC-5A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Topic Switch Mid-Task</div>
+        <div class="uc-id">UC-5A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Mid timesheet review · Employee asks about something else</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Detect when user needs a different agent · Smooth transitions · Confirm task completion before switching</div>
+      <div class="stage-note">Employee is reviewing their timesheet with the Timesheet agent.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"actually, can you tell me what my health insurance covers for dental"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes the topic shift (timesheet → benefits)</li>
+            <li>Checks in on the timesheet: "Sure — before I switch, did you finish reviewing your timesheet, or do you want to come back to it?"</li>
+            <li>Transitions cleanly after the employee responds</li>
+            <li>Does not show internal agent names in the switch — real R105 failure RS-119531</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Silently drops timesheet and answers dental question</li>
+            <li>Refuses the dental question because timesheet is open</li>
+            <li>"Switching to Dental/Benefits Agent..." shown as a system message — RS-119477</li>
+          </ul>
+        </div>
+        <div class="cirt-ref"><span>CIRT transcript</span>RS-119531 (agent names disclosed in conversation) · RS-119477 (raw tool message visible to user during switch)</div>
+      </div>
+    </div>
+
+    <!-- UC-5B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Compound Request (Two Topics at Once) — needs investigation</div>
+        <div class="uc-id">UC-5B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · Two different asks in one message</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Handle multi-part requests · Route to correct agent · Multi-step workflows spanning agents</div>
+      <div class="spec-note"><strong>Needs investigation:</strong> Compound intent queueing (handling two intents in one message) is not built in R105. It is not yet known how Bryte will behave when a user asks for two things at once. This use case needs to be tested before it can be scored.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I need to fix my timesheet and also update my direct deposit"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes both requests</li>
+            <li>Handles one first, offers the second: "Got it — let's start with your timesheet. Once that's done, I can help with your direct deposit."</li>
+            <li>Does not attempt both simultaneously</li>
+            <li>Does not ask which they want first — sequences it</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Picks one and ignores the other entirely</li>
+            <li>"Which would you like to do first?" — employee asked for both</li>
+            <li>Attempts both at once and loses track of one</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-5C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Persona Consistency Across Handoffs</div>
+        <div class="uc-id">UC-5C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Conversation has moved through Payroll and Absence agents</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Persona consistency across agents · Transitions between agents</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"who am I talking to right now?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Identifies as Bryte — not as a specific agent or system name</li>
+            <li>"I'm Bryte, here to help with your HR and payroll questions."</li>
+            <li>Tone matches the Bryte persona from the start</li>
+            <li>Does not mention model, platform, or underlying architecture</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"You're now talking to AbsenceAgent_v1"</li>
+            <li>Reveals internal system names or architecture</li>
+            <li>Presents as a Google product — real R105 failure RS-119511</li>
+          </ul>
+        </div>
+        <div class="cirt-ref"><span>CIRT transcript</span>RS-119511 (Bryte told user "I am a large language model, trained by Google")</div>
+      </div>
+    </div>
+
+    <!-- UC-5D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Ambiguous Agent Routing</div>
+        <div class="uc-id">UC-5D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Fresh session · No prior context</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Route to correct agent · Never silently fail on ambiguous requests · Re-prompt clearly when routing is ambiguous</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Send the message below with no prior context. The ambiguity comes from the message alone — do not add detail before sending. This is distinct from UC-4C (Ambiguous Input), where the topic itself is unknown. Here the topic is clear; only the routing destination is ambiguous.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I need to update my hours"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes "update my hours" could mean a timesheet correction (past hours) or a schedule change (upcoming hours)</li>
+            <li>Asks one short question to disambiguate: "Are you looking to correct hours from a past pay period, or change your upcoming schedule?"</li>
+            <li>Does not silently pick one interpretation and route without asking</li>
+            <li>Does not ask a broad question like "What would you like help with?" — the topic is already known</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Silently routes to the Timesheet agent without confirming which type of update was meant</li>
+            <li>Routes to the wrong agent — employee has to explain themselves again after the handoff</li>
+            <li>"What do you need help with today?" — too broad, ignores context already given</li>
+            <li>Asks two separate questions to disambiguate when one would do</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-5E -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Misroute Detection and Correction</div>
+        <div class="uc-id">UC-5E</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Employee corrects Bryte after being sent to the wrong agent</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Misroute detection and correction · Route to correct agent · Transitions between agents</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Turn 1 — send the message below. Bryte is likely to route to the Absence agent. Turn 2 — send the correction. Note which agent Bryte routed to in Turn 1 before scoring Turn 2.</div>
+      <div class="message-label">User message (Turn 1)</div>
+      <div class="message-bubble">"I need to fix something with my leave"</div>
+      <div class="stage-note">Bryte routes to the Absence agent. Employee clarifies:</div>
+      <div class="message-label">User message (Turn 2)</div>
+      <div class="message-bubble">"No, I mean a timesheet entry — someone recorded my absence wrong and it affected my leave balance. It's a timesheet issue"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Acknowledges the misroute without making it awkward: "Got it — let me get you to the right place"</li>
+            <li>Does not ask the employee to re-explain from the beginning</li>
+            <li>Re-routes to the Timesheet agent with the Turn 2 context intact</li>
+            <li>Does not defend the original routing or ask "Are you sure?"</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Stays in the Absence agent and tries to handle a timesheet issue it's not equipped for</li>
+            <li>"Can you start by explaining your issue again?" — drops the context the employee just gave</li>
+            <li>Asks the employee to rephrase their original message instead of acting on the correction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-5F -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Repeat Misroute Escalation — pending</div>
+        <div class="uc-id">UC-5F</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Employee has been misrouted three times in the same session</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Repeat misroute escalation · Acknowledge rejection and offer alternatives</div>
+      <div class="spec-note"><strong>Pending:</strong> This use case cannot be reliably triggered in a controlled eval session. There is no repeatable, evaluator-controlled way to force Bryte to misroute three times in a row. The behavior exists in the R105 spec (after 3 misroutes, surface related links), but testing it requires a consistent and reproducible misroute scenario — which does not currently exist. Keep for future eval planning when a reliable trigger is identified.</div>
+      <div class="message-label">User message (Turn 3 — after two prior misroutes)</div>
+      <div class="message-bubble">"this still isn't right — I keep getting sent to the wrong place"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes the pattern — does not attempt a fourth handoff</li>
+            <li>Escalates to self-service: "I'm having trouble finding the right place for this — here are some links that might help, or you can reach HR directly"</li>
+            <li>Apologizes once, briefly — does not over-explain or over-apologize</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Attempts a fourth agent handoff with no acknowledgment of the repeated failures</li>
+            <li>"I'm sorry about that — let me try again" for the third time</li>
+            <li>Leaves the employee with no path forward</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc5 -->
+
+  <!-- SCORECARD 6 -->
+  <div class="scorecard-section" id="sc6">
+    <div class="scorecard-title">Scorecard 6 — Session &amp; Memory &nbsp;·&nbsp; Returning user, session expiration, cross-session continuity</div>
+
+    <!-- UC-6A -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Returning After Timeout</div>
+        <div class="uc-id">UC-6A</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Prior session fully expired (tab closed) · Returning now</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Session resumption behavior · Session expiration communication · Conversation state persistence duration</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"hi I'm back"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Clean start — no reference to what was discussed before</li>
+            <li>Waits for the employee to state what they need</li>
+            <li>Feels like a natural greeting, not a system notification</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>References the prior session content</li>
+            <li>"Your session expired. Please start a new conversation." — system language</li>
+            <li>Auto-resumes a task the employee didn't ask to continue</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-6B -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Cross-Session Reference</div>
+        <div class="uc-id">UC-6B</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>References something from a prior expired session</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Conversation state persistence duration · Remember context within a session · Session resumption behavior</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"last week I asked you about bereavement leave — does the policy cover extended family?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Honest about not remembering the prior conversation — no system language: "I don't have record of our previous conversation, but I can answer that now."</li>
+            <li>Then actually answers the bereavement policy question</li>
+            <li>Does not fabricate what was discussed</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Makes up a summary of the "previous conversation"</li>
+            <li>"I'm sorry, I don't have access to previous sessions" — stops there without answering</li>
+            <li>Pretends to remember, gives potentially inaccurate information</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-6C -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Topic Thread Tracking Within a Session</div>
+        <div class="uc-id">UC-6C</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Has covered PTO, benefits, and PTO again in one session · Full conversation is within the 15-message window</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Remember context within a session · Maintain multi-topic threads · Consistency of interaction patterns</div>
+      <div class="stage-note">Earlier in this session, Bryte told the employee their PTO balance was 8 days. The employee then submitted a PTO request.</div>
+      <div class="spec-note"><strong>Note:</strong> R105 memory window is 15 messages. This use case is only valid when the referenced exchange is within those 15 turns. UC-6E tests what happens when it isn't.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"wait, earlier you said my PTO balance was 8 days — is that before or after the request I just submitted?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Recognizes this references something said earlier in the current session</li>
+            <li>Answers based on what was actually said — clarifies whether the 8 days was pre- or post-submission</li>
+            <li>If the answer requires checking the system, does so and gives a definitive answer</li>
+            <li>Does not ask the employee to repeat what was said in this session</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"I don't have record of that" when the context is from the same active session</li>
+            <li>Asks the employee to re-state what their PTO balance is</li>
+            <li>Contradicts what was said earlier without acknowledging the discrepancy</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-6D -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Context at Human Handoff (?)</div>
+        <div class="uc-id">UC-6D</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Has had a recent back-and-forth with Bryte about a direct deposit error — all within the last 15 turns · Now requests a human</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Preserve context during agent transfers · Provide context to human when escalating · Transitions between agents</div>
+      <div class="spec-note"><strong>Note:</strong> R105 passes the last 15 turns to the receiving agent. There is no structured handoff brief (employee ID, step summary). The human gets the conversation history — not a prepared summary.</div>
+      <div class="spec-note"><strong>Pending:</strong> Human escalation is not built in R105. This use case cannot be run until that feature is in scope. Keep for future eval planning.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"I've already tried fixing this twice and it still won't go through. Can I talk to someone?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Confirms the transfer is happening</li>
+            <li>Sets honest expectations: tells the employee the human will be able to see their recent conversation — not that they'll have a full prepared summary</li>
+            <li>Does not promise "you won't need to repeat yourself" for details that may be outside the 15-turn window</li>
+            <li>Tone is calm and supportive — not transactional</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Says "I'll transfer you now" with no mention of what context follows</li>
+            <li>Over-promises: "The agent will have all your details and a complete summary of everything we discussed"</li>
+            <li>Human agent opens with "Can you describe your issue?" when everything was in the last 15 turns — conversation context was not passed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-6E -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Memory Limit in a Long Conversation</div>
+        <div class="uc-id">UC-6E</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Long conversation — well over 15 turns · An early answer from Bryte has now fallen outside the memory window</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Remember context within a session · Never silently fail · Conversation state persistence duration</div>
+      <div class="spec-note"><strong>Note:</strong> This tests the 15-message window limit. Bryte should be honest when early context has fallen out of the window — not fabricate, and not refuse to help.</div>
+      <div class="spec-note"><strong>How to trigger:</strong> The evaluator scripts the full conversation. Turns 1–2: ask about overtime calculation and get an answer. Turns 3–9: ask about unrelated topics (PTO, benefits, schedule, direct deposit, etc.) — each exchange is one user message + one Bryte response. After ~8 exchanges (16 messages), the overtime answer has fallen out of the 15-message window. Then send the final message below.</div>
+      <div class="message-label">User message</div>
+      <div class="message-bubble">"you explained something at the beginning about how my overtime is calculated — can you remind me what you said?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>If still within the 15-turn window: accurately restates what was said</li>
+            <li>If it has fallen out of the window: is honest — does not pretend to remember</li>
+            <li>Does not fabricate a previous answer with false confidence</li>
+            <li>Offers to re-fetch the information: "I don't have that part of our conversation available anymore, but I can pull up the overtime rules for you now"</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>Makes up what was said earlier with confidence</li>
+            <li>Says "I don't have access to previous conversations" — wrong framing, this is a within-session window limit, not a session boundary</li>
+            <li>Is honest about not remembering but then refuses to re-fetch the information</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UC-6F -->
+    <div class="uc-card">
+      <div class="uc-header">
+        <div class="uc-title">Context Preserved After AI-to-AI Agent Transfer</div>
+        <div class="uc-id">UC-6F</div>
+      </div>
+      <div class="uc-meta">
+        <div class="meta-tag"><span>User</span>Employee</div>
+        <div class="meta-tag"><span>Setup</span>Employee states a specific detail in Turn 1 · Bryte routes to a specialist agent · Employee references it in Turn 2 without repeating</div>
+      </div>
+      <div class="criteria-row"><strong>Criteria:</strong> Preserve context during agent transfers · Remember context within a session · Don't ask for information already provided</div>
+      <div class="spec-note"><strong>How to trigger:</strong> Turn 1 — tell Bryte something specific: "I have a problem with my paycheck from August 15th." Bryte routes to the Payroll agent. Turn 2 — send the message below without restating the date or issue.</div>
+      <div class="spec-note"><strong>Note:</strong> This tests the AI-to-AI side of "Preserve context during agent transfers." R105 passes the last 10–15 messages + intent to the receiving agent. UC-6D covers the human handoff side, which is still pending.</div>
+      <div class="message-label">User message (Turn 2 — after handoff to Payroll agent)</div>
+      <div class="message-bubble">"I already told you which paycheck — can you pull it up?"</div>
+      <div class="section-pair">
+        <div class="expected-box">
+          <div class="box-label">Expected</div>
+          <ul>
+            <li>Receiving agent has the prior context — does not ask which paycheck the employee means</li>
+            <li>"Yes, the August 15th paycheck — let me pull that up for you"</li>
+            <li>Does not open with a fresh greeting as if the conversation just started</li>
+          </ul>
+        </div>
+        <div class="fail-box">
+          <div class="box-label">Fail</div>
+          <ul>
+            <li>"Which paycheck are you referring to?" — drops context established before the handoff</li>
+            <li>Opens with a fresh greeting and asks the employee to describe their issue from scratch</li>
+            <li>Acknowledges the transfer but has no memory of what was said before it</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sc6 -->
+
+  <!-- INDEX -->
+  <div class="index-section" id="index">
+    <h2>Use Case Index</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Scorecard</th>
+          <th>Key Criteria</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="td-id">UC-1A</td><td>PTO Balance Check</td><td>Simple Q&amp;A</td><td>Address first, accurate, short</td></tr>
+        <tr><td class="td-id">UC-1B</td><td>Pay Stub Question</td><td>Simple Q&amp;A</td><td>Explain accurately, right length</td></tr>
+        <tr><td class="td-id">UC-1C</td><td>Policy Lookup</td><td>Simple Q&amp;A</td><td>Accurate from docs, specific answer</td></tr>
+        <tr><td class="td-id">UC-1D</td><td>Off-Topic Rejection</td><td>Simple Q&amp;A</td><td>Redirect with alternatives</td></tr>
+        <tr><td class="td-id">UC-1E</td><td>User Data Access Request — needs investigation</td><td>Simple Q&amp;A</td><td>GRD-10 transparency not confirmed built in R105</td></tr>
+        <tr><td class="td-id">UC-1F</td><td>Actionable Answer with Next Step</td><td>Simple Q&amp;A</td><td>Answer includes a next step, doesn't dead-end</td></tr>
+        <tr><td class="td-id">UC-1G</td><td>Lead with Solution, Max 3 Choices</td><td>Simple Q&amp;A</td><td>Lead with best answer, never more than 3 options</td></tr>
+        <tr><td class="td-id">UC-2A</td><td>Direct Deposit Setup</td><td>Multi-step</td><td>Recap, confirm, group fields</td></tr>
+        <tr><td class="td-id">UC-2B</td><td>PTO Request</td><td>Multi-step</td><td>Confirm, cancel mid-flow</td></tr>
+        <tr><td class="td-id">UC-2C</td><td>Benefit Enrollment Interrupted</td><td>Multi-step</td><td>High-stakes task protection</td></tr>
+        <tr><td class="td-id">UC-2D</td><td>Mid-Flow Cancel</td><td>Multi-step</td><td>Cancel handling, state save</td></tr>
+        <tr><td class="td-id">UC-2E</td><td>Answer Acknowledgment</td><td>Multi-step</td><td>Acknowledge each answer, don't jump silently</td></tr>
+        <tr><td class="td-id">UC-2F</td><td>Manual Entry Fallback</td><td>Multi-step</td><td>Offer manual when auto-fill fails</td></tr>
+        <tr><td class="td-id">UC-2G</td><td>Incomplete Form Resumption</td><td>Multi-step</td><td>Resume mid-session form after interruption, don't restart</td></tr>
+        <tr><td class="td-id">UC-2H</td><td>Actionable Answer After Completed Transaction</td><td>Multi-step</td><td>Confirm outcome AND say what happens next</td></tr>
+        <tr><td class="td-id">UC-2I</td><td>Confirmation Style Adapts to Complexity</td><td>Multi-step</td><td>Short confirm for low-stakes, full recap for high-stakes</td></tr>
+        <tr><td class="td-id">UC-3A</td><td>Bereavement Leave</td><td>Emotional</td><td>Acknowledge without labeling</td></tr>
+        <tr><td class="td-id">UC-3B</td><td>Manager Complaint</td><td>Emotional</td><td>Frustration + mental health signal</td></tr>
+        <tr><td class="td-id">UC-3C</td><td>Medical Leave</td><td>Emotional</td><td>Sensitivity, no diagnosis request</td></tr>
+        <tr><td class="td-id">UC-3D</td><td>Termination Notice</td><td>Emotional</td><td>Practical + brief acknowledgment</td></tr>
+        <tr><td class="td-id">UC-4A</td><td>Error Response — Request Cannot Complete</td><td>Error &amp; Recovery</td><td>Plain language, specific reason, next step</td></tr>
+        <tr><td class="td-id">UC-4B</td><td>Permission Error</td><td>Error &amp; Recovery</td><td>Explain limit, offer alternative</td></tr>
+        <tr><td class="td-id">UC-4C</td><td>Ambiguous Input</td><td>Error &amp; Recovery</td><td>One clarifying question</td></tr>
+        <tr><td class="td-id">UC-4D</td><td>Repeat Failure Escalation</td><td>Error &amp; Recovery</td><td>Escalate on pattern</td></tr>
+        <tr><td class="td-id">UC-4E</td><td>Context Lost After Error</td><td>Error &amp; Recovery</td><td>Don't re-ask info already given after an error</td></tr>
+        <tr><td class="td-id">UC-4F</td><td>Out-of-Scope Question (Legal / Tax / Medical)</td><td>Error &amp; Recovery</td><td>Decline clearly, don't fabricate, redirect to right resource</td></tr>
+        <tr><td class="td-id">UC-5A</td><td>Topic Switch Mid-Task</td><td>Agent Handoffs</td><td>Confirm task, clean switch</td></tr>
+        <tr><td class="td-id">UC-5B</td><td>Compound Request — needs investigation</td><td>Agent Handoffs</td><td>Compound intent not built in R105 — behavior unknown</td></tr>
+        <tr><td class="td-id">UC-5C</td><td>Persona Consistency</td><td>Agent Handoffs</td><td>Always Bryte, no agent names</td></tr>
+        <tr><td class="td-id">UC-5D</td><td>Ambiguous Agent Routing</td><td>Agent Handoffs</td><td>Clarify routing when request maps to two agents</td></tr>
+        <tr><td class="td-id">UC-5E</td><td>Misroute Detection and Correction</td><td>Agent Handoffs</td><td>Acknowledge misroute, re-route with context intact</td></tr>
+        <tr><td class="td-id">UC-5F</td><td>Repeat Misroute Escalation — pending</td><td>Agent Handoffs</td><td>Pending — no reliable trigger for 3 consecutive misroutes</td></tr>
+        <tr><td class="td-id">UC-6A</td><td>Return After Timeout</td><td>Session &amp; Memory</td><td>Clean slate after expiry</td></tr>
+        <tr><td class="td-id">UC-6B</td><td>Cross-Session Reference</td><td>Session &amp; Memory</td><td>Honest about limits, still answers</td></tr>
+        <tr><td class="td-id">UC-6C</td><td>Topic Thread Tracking</td><td>Session &amp; Memory</td><td>In-session memory accurate (within 15 turns)</td></tr>
+        <tr><td class="td-id">UC-6D</td><td>Context at Human Handoff (?)</td><td>Session &amp; Memory</td><td>Pending — human escalation not in R105 scope</td></tr>
+        <tr><td class="td-id">UC-6E</td><td>Memory Limit in Long Conversation</td><td>Session &amp; Memory</td><td>Honest when early context falls out of 15-turn window</td></tr>
+        <tr><td class="td-id">UC-6F</td><td>Context Preserved After AI-to-AI Agent Transfer</td><td>Session &amp; Memory</td><td>Receiving agent has prior context, employee doesn't repeat themselves</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <a class="back-top" href="#" onclick="window.scrollTo(0,0); return false;">Back to top ↑</a>
+
+</main>
+
+<script>
+  // ── TAB SWITCHING ────────────────────────────────────────────
+  const PANEL_IDS = ['sc1','sc2','sc3','sc4','sc5','sc6','index'];
+
+  function showTab(id) {
+    PANEL_IDS.forEach(pid => {
+      const el = document.getElementById(pid);
+      if (el) el.classList.remove('active');
+    });
+    const panel = document.getElementById(id);
+    if (panel) panel.classList.add('active');
+
+    document.querySelectorAll('.tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.target === id)
+    );
+
+    window.scrollTo(0, 0);
+    localStorage.setItem('active-tab', id);
+  }
+
+  document.querySelectorAll('.tab').forEach(tab =>
+    tab.addEventListener('click', () => showTab(tab.dataset.target))
+  );
+
+  // ── VOTE BUTTONS ─────────────────────────────────────────────
+  function applyState(card, state) {
+    card.classList.remove('accepted', 'rejected');
+    if (state) card.classList.add(state);
+  }
+
+  function updateCounter() {
+    const cards = document.querySelectorAll('.uc-card');
+    const accepted = [...cards].filter(c => c.classList.contains('accepted')).length;
+    const rejected = [...cards].filter(c => c.classList.contains('rejected')).length;
+    document.getElementById('count-accept').textContent  = accepted;
+    document.getElementById('count-reject').textContent  = rejected;
+    document.getElementById('count-pending').textContent = cards.length - accepted - rejected;
+  }
+
+  document.querySelectorAll('.uc-card').forEach(card => {
+    const ucIdEl = card.querySelector('.uc-id');
+    if (!ucIdEl) return;
+    const ucId = ucIdEl.textContent.trim();
+
+    const group = document.createElement('div');
+    group.className = 'vote-group';
+    group.innerHTML = `
+      <button class="vote-btn accept-btn" data-action="accepted">✓ Accept</button>
+      <button class="vote-btn reject-btn" data-action="rejected">✗ Reject</button>
+    `;
+    card.querySelector('.uc-header').appendChild(group);
+
+    const saved = localStorage.getItem('vote-' + ucId);
+    if (saved) applyState(card, saved);
+
+    group.querySelectorAll('.vote-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        const already = card.classList.contains(action);
+        applyState(card, already ? null : action);
+        already
+          ? localStorage.removeItem('vote-' + ucId)
+          : localStorage.setItem('vote-' + ucId, action);
+        updateCounter();
+      });
+    });
+  });
+
+  // ── INIT ─────────────────────────────────────────────────────
+  showTab(localStorage.getItem('active-tab') || 'sc1');
+  updateCounter();
+</script>
+
+</body>
+</html>
